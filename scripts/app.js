@@ -185,6 +185,73 @@ document.addEventListener('DOMContentLoaded', () => {
     exportButton.textContent = 'Export History';
     exportButton.addEventListener('click', exportHistory);
     document.getElementById('history-section').appendChild(exportButton);
+
+    document.getElementById('transaction-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        // Get form values
+        const cardNumber = document.getElementById('card-number').value;
+        const amount = document.getElementById('amount').value;
+        const merchant = document.getElementById('merchant').value;
+        const expiry = document.getElementById('expiry-date').value;
+
+        // Generate risk score based on amount
+        let riskScore = Math.min(100, Math.max(0, 100 - amount / 10));
+        riskScore = Math.floor(Math.random() * 101); // Randomize for demo
+
+        // Generate random risk, time, location, confidence, and assumption
+        const risks = ['Low', 'Medium', 'High'];
+        const risk = getRandom(risks);
+        const time = getRandomTime();
+        const location = getConsistentLocation(cardNumber);
+        const confidence = getRandomConfidence();
+        const assumption = getRandomAssumption(risk, time, location);
+
+        // Choose color for risk
+        const riskColors = { Low: '#27ae60', Medium: '#f1c40f', High: '#e67e22' };
+
+        // Display result
+        document.getElementById('result').innerHTML = `
+            <div style="padding:1em;">
+                <strong>Prediction:</strong>
+                <span style="color:${riskColors[risk]};font-weight:bold;">${risk} Risk</span><br>
+                <strong>Confidence:</strong> ${confidence}%<br>
+                <strong>Transaction Time:</strong> ${time}<br>
+                <strong>Location:</strong> ${location}<br>
+                <strong>Assumption:</strong> <span style="color:#3498db;">${assumption}</span>
+            </div>
+        `;
+
+        // Add to transaction history table
+        const transactionId = 'TX' + Date.now() + Math.floor(Math.random() * 1000);
+        // Display the full card number (no masking)
+        const historyBody = document.getElementById('history-body');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>${transactionId}</td>
+            <td>${cardNumber}</td>
+            <td>${amount}</td>
+            <td>${merchant}</td>
+            <td style="color:${riskColors[risk]};font-weight:bold;">${risk}</td>
+        `;
+        historyBody.appendChild(row);
+    });
+
+    document.getElementById('download-history').addEventListener('click', function() {
+        const rows = Array.from(document.querySelectorAll('#transaction-history tr'));
+        const csv = rows.map(row =>
+            Array.from(row.children).map(cell => `"${cell.innerText}"`).join(',')
+        ).join('\n');
+        const blob = new Blob([csv], {type: 'text/csv'});
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'transaction_history.csv';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
 });
 
 window.addEventListener('scroll', () => {
